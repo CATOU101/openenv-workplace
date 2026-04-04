@@ -7,4 +7,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["bash", "-c", "python baseline.py && sleep infinity"]
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "7860"]
