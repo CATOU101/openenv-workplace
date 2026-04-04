@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openenv-workplace"
+version = "0.1.0"
+description = "Deterministic OpenEnv workplace simulation for hackathon evaluation."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "openenv-core>=0.2.0",
+  "pydantic>=2.7,<3.0",
+  "openai>=1.30.0,<3.0.0",
+  "PyYAML>=6.0,<7.0",
+  "fastapi>=0.111,<1.0",
+  "uvicorn>=0.30,<1.0",
+]
+
+[project.scripts]
+server = "server.app:main"
+
+[tool.setuptools]
+packages = ["openenv", "server"]
