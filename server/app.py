@@ -18,6 +18,11 @@ env = OpenEnvWorkplace()
 app = FastAPI(title="OpenEnv Workplace")
 
 
+@app.get("/")
+def root() -> dict[str, str]:
+    return {"status": "ok", "name": "openenv-workplace"}
+
+
 @app.post("/reset")
 def reset(request: ResetRequest | None = None) -> dict[str, Any]:
     observation = env.reset(task_id=request.task_id if request else None)
