@@ -1,45 +1,10 @@
 from __future__ import annotations
 
-import json
 import os
 from typing import Any
 
 from openenv import OpenEnvAction, OpenEnvWorkplace
-
-try:
-    from openai import OpenAI
-except ModuleNotFoundError:  # pragma: no cover - dependency availability varies by runtime
-    OpenAI = None  # type: ignore[assignment]
-
-
-SYSTEM_PROMPT = """
-You are controlling a deterministic workplace simulation environment.
-Return exactly one JSON object with keys:
-- action_type: string
-- target_id: string or null
-- payload: object
-
-Choose only from the available_actions shown in the observation.
-Focus on efficient task completion.
-""".strip()
-
-
-def _parse_model_text(response: Any) -> str:
-    if hasattr(response, "output_text"):
-        return str(response.output_text).strip()
-
-    output = getattr(response, "output", [])
-    chunks: list[str] = []
-    for item in output:
-        for content in getattr(item, "content", []):
-            text = getattr(content, "text", None)
-            if text:
-                chunks.append(str(text))
-    return "".join(chunks).strip()
-
-
-def build_prompt(observation: dict[str, Any]) -> str:
-    return json.dumps(observation, indent=2, sort_keys=True)
+from llm_agent import LLMAgent
 
 
 def fallback_policy(task_id: str, observation: dict[str, Any]) -> OpenEnvAction:
@@ -83,31 +48,30 @@ def fallback_policy(task_id: str, observation: dict[str, Any]) -> OpenEnvAction:
     raise ValueError(f"Unsupported task_id: {task_id}")
 
 
-def llm_policy(client: Any, model: str, observation: dict[str, Any]) -> OpenEnvAction:
-    response = client.responses.create(
-        model=model,
-        input=[
-            {"role": "system", "content": [{"type": "input_text", "text": SYSTEM_PROMPT}]},
-            {"role": "user", "content": [{"type": "input_text", "text": build_prompt(observation)}]},
-        ],
-    )
-    content = _parse_model_text(response)
-    data = json.loads(content)
-    return OpenEnvAction.model_validate(data)
+class HeuristicAgent:
+    def act(self, observation: Any) -> OpenEnvAction:
+        observation_payload = observation.model_dump(mode="json") if hasattr(observation, "model_dump") else observation
+        return fallback_policy(observation_payload["task_id"], observation_payload)
 
 
-def run_task(env: OpenEnvWorkplace, task_id: str, client: Any, model: str) -> dict[str, Any]:
+def build_agent() -> Any:
+    agent_type = os.getenv("AGENT_TYPE", "heuristic").strip().lower()
+    if agent_type == "llm":
+        return LLMAgent()
+    return HeuristicAgent()
+
+
+def run_task(env: OpenEnvWorkplace, task_id: str, agent: Any) -> dict[str, Any]:
     observation = env.reset(task_id=task_id)
     done = False
     last_raw_score = 0.0
     final_info: dict[str, Any] = {}
 
     while not done:
-        observation_payload = observation.model_dump(mode="json")
         try:
-            action = llm_policy(client, model, observation_payload) if client else fallback_policy(task_id, observation_payload)
+            action = agent.act(observation)
         except Exception:
-            action = fallback_policy(task_id, observation_payload)
+            action = fallback_policy(task_id, observation.model_dump(mode="json"))
 
         observation, reward, done, info = env.step(action)
         last_raw_score = float(info["raw_score"])
@@ -140,15 +104,12 @@ def print_leaderboard(results: list[dict[str, Any]]) -> None:
 
 
 def main() -> None:
-    api_key = os.getenv("OPENAI_API_KEY")
-    model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
-    client = OpenAI(api_key=api_key) if api_key and OpenAI is not None else None
-
     env = OpenEnvWorkplace()
+    agent = build_agent()
     results: list[dict[str, Any]] = []
 
     for task in env.task_specs:
-        result = run_task(env, task.task_id, client, model)
+        result = run_task(env, task.task_id, agent)
         results.append(result)
 
     print("Per-task baseline scores")
