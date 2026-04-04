@@ -1,0 +1,20 @@
+name: openenv-workplace
+description: Deterministic real-world workplace simulation for hackathon evaluation of AI agents across email triage, meeting scheduling, and customer data cleaning.
+version: 0.1.0
+entrypoint: openenv.env:OpenEnvWorkplace
+tasks:
+  - id: email_triage_easy
+    name: Email Triage
+    difficulty: easy
+    objective: Resolve inbox items by archiving non-actionable mail and replying correctly to the vendor.
+  - id: meeting_scheduling_medium
+    name: Meeting Scheduling
+    difficulty: medium
+    objective: Schedule and confirm the earliest shared timeslot across all attendees.
+  - id: data_cleaning_hard
+    name: Data Cleaning
+    difficulty: hard
+    objective: Clean a noisy customer dataset by normalizing, deduplicating, filling gaps, and finalizing output.
+observation_model: openenv.models:OpenEnvObservation
+action_model: openenv.models:OpenEnvAction
+reward_model: openenv.models:OpenEnvReward
