@@ -101,6 +101,12 @@ Typed models:
 
 ## Task Definitions
 
+Task grading is routed through a centralized `GRADERS` registry in `openenv/graders.py`, which maps canonical task names to deterministic grader functions:
+
+- `email_triage`
+- `meeting_scheduling`
+- `data_cleaning`
+
 ### 1. Email Triage (Easy)
 
 Objective: process three inbox items using realistic actions such as reading, archiving, and replying.
@@ -196,6 +202,8 @@ The environment includes evaluation-friendly instrumentation:
 - Action validation and invalid-step accounting
 - Repeated-action tracking
 - Step counter and max-step budget
+- Registry-based grader dispatch for deterministic task evaluation
+- Automatic task completion when the clamped raw score reaches `0.99`
 - Leaderboard-style baseline output for quick judging
 
 `info` includes:
