@@ -8,7 +8,7 @@ from llm_agent import LLMAgent
 
 
 def fallback_policy(task_id: str, observation: dict[str, Any]) -> OpenEnvAction:
-    if task_id == "email_triage_easy":
+    if task_id == "email_triage":
         inbox = observation["inbox"]
         unread = [email for email in inbox if email["status"] in {"unread", "read"}]
         if unread:
@@ -22,7 +22,7 @@ def fallback_policy(task_id: str, observation: dict[str, Any]) -> OpenEnvAction:
             )
         return OpenEnvAction(action_type="submit")
 
-    if task_id == "meeting_scheduling_medium":
+    if task_id == "meeting_scheduling":
         calendar = observation["calendar"]
         if not calendar.get("proposed_slot"):
             return OpenEnvAction(action_type="propose_meeting", payload={"slot": "2026-04-06T10:00"})
@@ -30,7 +30,7 @@ def fallback_policy(task_id: str, observation: dict[str, Any]) -> OpenEnvAction:
             return OpenEnvAction(action_type="confirm_meeting")
         return OpenEnvAction(action_type="submit")
 
-    if task_id == "data_cleaning_hard":
+    if task_id == "data_cleaning":
         dataset_preview = observation["dataset_preview"]
         if any(row["name"] != str(row["name"]).strip() or row["email"] != str(row["email"]).strip() for row in dataset_preview):
             return OpenEnvAction(action_type="clean_data", payload={"operation": "trim_whitespace"})
@@ -62,7 +62,7 @@ def build_agent() -> Any:
 
 
 def run_task(env: OpenEnvWorkplace, task_id: str, agent: Any) -> dict[str, Any]:
-    observation = env.reset(task_id=task_id)
+    observation = env.reset(task_name=task_id)
     done = False
     last_raw_score = 0.0
     final_info: dict[str, Any] = {}

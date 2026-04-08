@@ -3,15 +3,15 @@ description: Deterministic real-world workplace simulation for hackathon evaluat
 version: 0.1.0
 entrypoint: openenv.env:OpenEnvWorkplace
 tasks:
-  - id: email_triage_easy
+  - id: email_triage
     name: Email Triage
     difficulty: easy
     objective: Resolve inbox items by archiving non-actionable mail and replying correctly to the vendor.
-  - id: meeting_scheduling_medium
+  - id: meeting_scheduling
     name: Meeting Scheduling
     difficulty: medium
     objective: Schedule and confirm the earliest shared timeslot across all attendees.
-  - id: data_cleaning_hard
+  - id: data_cleaning
     name: Data Cleaning
     difficulty: hard
     objective: Clean a noisy customer dataset by normalizing, deduplicating, filling gaps, and finalizing output.

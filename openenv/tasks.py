@@ -19,7 +19,7 @@ class TaskSpec:
 
 
 EMAIL_TRIAGE_TASK = TaskSpec(
-    task_id="email_triage_easy",
+    task_id="email_triage",
     task_name="Email Triage",
     difficulty=TaskDifficulty.EASY,
     objective=(
@@ -67,7 +67,7 @@ EMAIL_TRIAGE_TASK = TaskSpec(
 
 
 MEETING_SCHEDULING_TASK = TaskSpec(
-    task_id="meeting_scheduling_medium",
+    task_id="meeting_scheduling",
     task_name="Meeting Scheduling",
     difficulty=TaskDifficulty.MEDIUM,
     objective=(
@@ -98,7 +98,7 @@ MEETING_SCHEDULING_TASK = TaskSpec(
 
 
 DATA_CLEANING_TASK = TaskSpec(
-    task_id="data_cleaning_hard",
+    task_id="data_cleaning",
     task_name="Data Cleaning",
     difficulty=TaskDifficulty.HARD,
     objective=(

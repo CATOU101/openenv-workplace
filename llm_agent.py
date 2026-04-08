@@ -69,7 +69,7 @@ class LLMAgent:
         return OpenEnvAction.model_validate(payload)
 
     def _fallback_action(self, observation: OpenEnvObservation) -> OpenEnvAction:
-        if observation.task_id == "email_triage_easy":
+        if observation.task_id == "email_triage":
             unread = [email for email in observation.inbox if email["status"] in {"unread", "read"}]
             if unread:
                 email = unread[0]
@@ -82,14 +82,14 @@ class LLMAgent:
                 )
             return OpenEnvAction(action_type="submit")
 
-        if observation.task_id == "meeting_scheduling_medium":
+        if observation.task_id == "meeting_scheduling":
             if not observation.calendar.get("proposed_slot"):
                 return OpenEnvAction(action_type="propose_meeting", payload={"slot": "2026-04-06T10:00"})
             if not observation.calendar.get("confirmed"):
                 return OpenEnvAction(action_type="confirm_meeting")
             return OpenEnvAction(action_type="submit")
 
-        if observation.task_id == "data_cleaning_hard":
+        if observation.task_id == "data_cleaning":
             dataset_preview = observation.dataset_preview
             if any(row["name"] != str(row["name"]).strip() or row["email"] != str(row["email"]).strip() for row in dataset_preview):
                 return OpenEnvAction(action_type="clean_data", payload={"operation": "trim_whitespace"})
