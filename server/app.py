@@ -12,6 +12,7 @@ from openenv.models import OpenEnvAction
 
 class ResetRequest(BaseModel):
     task_id: str | None = None
+    task_name: str | None = None
 
 
 env = OpenEnvWorkplace()
@@ -25,7 +26,10 @@ def root() -> dict[str, str]:
 
 @app.post("/reset")
 def reset(request: ResetRequest | None = None) -> dict[str, Any]:
-    observation = env.reset(task_id=request.task_id if request else None)
+    selected_task = None
+    if request:
+        selected_task = request.task_name or request.task_id
+    observation = env.reset(task_name=selected_task)
     return observation.model_dump(mode="json")
 
 
