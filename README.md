@@ -31,7 +31,7 @@ The environment models common operational workflows instead of toy mechanics:
 - Meeting scheduling: identify the earliest shared timeslot across participants and confirm the event.
 - Data cleaning: normalize a CRM export, fill missing values from known mappings, deduplicate records, and finalize a clean dataset.
 
-All tasks are deterministic and scored by code-based graders that return values between `0.0` and `1.0`.
+All tasks are deterministic and scored by code-based graders that return values strictly within `(0.0, 1.0)`. Final grader outputs are clamped into the range `[0.01, 0.99]` for evaluator compatibility.
 
 ## Architecture Diagram
 
@@ -246,14 +246,14 @@ This repository is compatible with containerized HuggingFace Spaces:
 
 ## Baseline Scores
 
-The included fallback policy is deterministic and should produce reproducible metrics:
+The included fallback policy is deterministic and should produce reproducible metrics. Because final task graders clamp scores into the strict open interval `(0, 1)`, perfect task completion yields `0.9900` instead of `1.0000`.
 
 | Task | Score |
 |---|---:|
-| Email Triage | 1.0000 |
-| Meeting Scheduling | 1.0000 |
-| Data Cleaning | 1.0000 |
-| Average | 1.0000 |
+| Email Triage | 0.9900 |
+| Meeting Scheduling | 0.9900 |
+| Data Cleaning | 0.9900 |
+| Average | 0.9900 |
 
 When using an OpenAI model, results remain reproducible so long as the model output is stable and temperature is set to `0`.
 
