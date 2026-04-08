@@ -30,9 +30,25 @@ def parse_model_text(response: Any) -> str:
 
 
 def build_client() -> OpenAI:
+    api_base_url = os.environ.get("API_BASE_URL")
+    api_key = os.environ.get("API_KEY")
+    model_name = os.environ.get("MODEL_NAME")
+
+    missing = [
+        name
+        for name, value in (
+            ("API_BASE_URL", api_base_url),
+            ("API_KEY", api_key),
+            ("MODEL_NAME", model_name),
+        )
+        if not value
+    ]
+    if missing:
+        raise RuntimeError(f"Missing required environment variables: {', '.join(missing)}")
+
     return OpenAI(
-        api_key=os.getenv("HF_TOKEN", ""),
-        base_url=os.getenv("API_BASE_URL"),
+        base_url=os.environ["API_BASE_URL"],
+        api_key=os.environ["API_KEY"],
     )
 
 
@@ -58,7 +74,9 @@ def build_action(client: OpenAI, model_name: str, observation: Any) -> OpenEnvAc
 
 
 def main() -> None:
-    model_name = os.getenv("MODEL_NAME", "")
+    model_name = os.environ.get("MODEL_NAME")
+    if not model_name:
+        raise RuntimeError("Missing required environment variables: MODEL_NAME")
     client = build_client()
     env = OpenEnvWorkplace()
 
