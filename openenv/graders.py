@@ -4,7 +4,7 @@ from typing import Any
 
 
 def _clamp_score(score: float) -> float:
-    return round(max(0.01, min(score, 0.99)), 4)
+    return max(0.01, min(score, 0.99))
 
 
 def grade_email_triage(task_state: dict[str, Any]) -> tuple[float, str]:
@@ -82,3 +82,10 @@ def grade_data_cleaning(task_state: dict[str, Any]) -> tuple[float, str]:
         return _clamp_score(score), "Dataset is partially cleaned but still missing one or more required fixes."
 
     return _clamp_score(1.0), ""
+
+
+GRADERS = {
+    "email_triage": grade_email_triage,
+    "meeting_scheduling": grade_meeting_scheduling,
+    "data_cleaning": grade_data_cleaning,
+}

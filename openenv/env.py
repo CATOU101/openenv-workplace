@@ -4,7 +4,7 @@ from copy import deepcopy
 from hashlib import sha1
 from typing import Any
 
-from openenv.graders import grade_data_cleaning, grade_email_triage, grade_meeting_scheduling
+from openenv.graders import GRADERS
 from openenv.models import ActionType, OpenEnvAction, OpenEnvObservation, OpenEnvReward
 from openenv.rewards import build_reward
 from openenv.tasks import TaskSpec, get_task_specs
@@ -73,7 +73,7 @@ class OpenEnvWorkplace:
         if grader_feedback:
             self._last_feedback = f"{self._last_feedback} {grader_feedback}".strip()
 
-        if action.action_type == ActionType.SUBMIT or self._steps_taken >= self._current_spec.max_steps or current_score >= 1.0:
+        if action.action_type == ActionType.SUBMIT or self._steps_taken >= self._current_spec.max_steps or current_score >= 0.99:
             self._done = True
 
         reward = build_reward(
@@ -158,13 +158,19 @@ class OpenEnvWorkplace:
         return f"{action.action_type.value}|{action.target_id}|{sorted(action.payload.items())}"
 
     def _grade_current_task(self) -> tuple[float, str]:
-        if self._current_spec.task_id == "email_triage_easy":
-            return grade_email_triage(self._current_task_state)
-        if self._current_spec.task_id == "meeting_scheduling_medium":
-            return grade_meeting_scheduling(self._current_task_state)
-        if self._current_spec.task_id == "data_cleaning_hard":
-            return grade_data_cleaning(self._current_task_state)
-        raise ValueError(f"No grader defined for task {self._current_spec.task_id}")
+        task_name = self._current_spec.task_id
+        if task_name.startswith("email_triage"):
+            task_name = "email_triage"
+        elif task_name.startswith("meeting_scheduling"):
+            task_name = "meeting_scheduling"
+        elif task_name.startswith("data_cleaning"):
+            task_name = "data_cleaning"
+
+        if task_name not in GRADERS:
+            raise ValueError(f"No grader defined for task {self._current_spec.task_id}")
+
+        score, message = GRADERS[task_name](self._current_task_state)
+        return score, message
 
     def _apply_action(self, action: OpenEnvAction) -> tuple[bool, str]:
         if action.action_type not in self._current_spec.available_actions:
