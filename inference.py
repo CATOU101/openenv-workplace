@@ -71,53 +71,64 @@ def build_action(client: OpenAI, model_name: str, observation: Any) -> OpenEnvAc
     return OpenEnvAction.model_validate(payload)
 
 
-def main() -> None:
-    model_name = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+def run_task(client: OpenAI, model_name: str, task_name: str) -> tuple[bool, int, float, list[float]]:
+    env = OpenEnvWorkplace(task_name=task_name)
+    observation = env.reset(task_name=task_name)
+    print(f"[START] task={observation.task_id} env=openenv-workplace model={model_name}")
+
     rewards: list[float] = []
     done = False
     success = False
     step_count = 0
     last_error: str | None = None
+
+    while not done and step_count < 20:
+        error: str | None = None
+        try:
+            action = build_action(client, model_name, observation)
+            action_text = json.dumps(action.model_dump(mode="json"), separators=(",", ":"))
+            observation, reward, done, _info = env.step(action)
+            reward_value = float(reward.score)
+        except Exception as exc:
+            error = str(exc)
+            action_text = "null"
+            reward_value = 0.0
+            done = True
+
+        rewards.append(reward_value)
+        step_count += 1
+        last_error = error
+        print(
+            f"[STEP] step={step_count} action={action_text} "
+            f"reward={reward_value:.2f} done={'true' if done else 'false'} "
+            f"error={error if error is not None else 'null'}"
+        )
+
+    if done and rewards:
+        success = last_error is None
+
+    score = sum(rewards) / len(rewards) if rewards else 0.0
+    score = max(0.01, min(0.99, score))
+    reward_list = ",".join(f"{value:.2f}" for value in rewards)
+    print(
+        f"[END] success={'true' if success else 'false'} "
+        f"steps={step_count} score={score:.2f} rewards=<{reward_list}>"
+    )
+    return success, step_count, score, rewards
+
+
+def main() -> None:
+    model_name = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
     try:
         client = build_client()
-        env = OpenEnvWorkplace()
-        observation = env.reset()
-        print(f"[START] task={observation.task_id} env=openenv-workplace model={model_name}")
-
-        while not done and step_count < 20:
-            error: str | None = None
-            try:
-                action = build_action(client, model_name, observation)
-                action_text = json.dumps(action.model_dump(mode="json"), separators=(",", ":"))
-                observation, reward, done, _info = env.step(action)
-                reward_value = float(reward.score)
-            except Exception as exc:
-                error = str(exc)
-                action_text = "null"
-                reward_value = 0.0
-                done = True
-
-            rewards.append(reward_value)
-            step_count += 1
-            last_error = error
-            print(
-                f"[STEP] step={step_count} action={action_text} "
-                f"reward={reward_value:.2f} done={'true' if done else 'false'} "
-                f"error={error if error is not None else 'null'}"
-            )
-
-        if done and rewards:
-            success = last_error is None
-    except Exception:
-        success = False
+        for task_name in ("email_triage", "meeting_scheduling", "data_cleaning"):
+            run_task(client, model_name, task_name)
+    except Exception as exc:
+        print("[START] task= env=openenv-workplace model=" + model_name)
+        print(f"[STEP] step=0 action=null reward=0.00 done=true error={str(exc)}")
+        print("[END] success=false steps=0 score=0.01 rewards=<>")
     finally:
-        score = sum(rewards) / len(rewards) if rewards else 0.0
-        score = max(0.0, min(1.0, score))
-        reward_list = ",".join(f"{value:.2f}" for value in rewards)
-        print(
-            f"[END] success={'true' if success else 'false'} "
-            f"steps={step_count} score={score:.2f} rewards=<{reward_list}>"
-        )
+        return None
 
 
 if __name__ == "__main__":

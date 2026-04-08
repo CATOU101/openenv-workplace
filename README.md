@@ -77,10 +77,14 @@ openenv-workplace/
     graders.py
     rewards.py
   baseline.py
+  inference.py
+  debug_tasks.py
   openenv.yaml
   Dockerfile
   requirements.txt
   README.md
+  tests/
+    test_graders.py
 ```
 
 ## OpenEnv Interface
@@ -92,6 +96,12 @@ Implemented methods:
 - `reset() -> OpenEnvObservation`
 - `step(action: OpenEnvAction) -> tuple[OpenEnvObservation, OpenEnvReward, bool, dict]`
 - `state() -> OpenEnvObservation`
+
+`OpenEnvWorkplace` also supports task-specific construction and reset for independent evaluation:
+
+- `OpenEnvWorkplace(task_name="email_triage")`
+- `env.reset(task_name="meeting_scheduling")`
+- `env.reset(task_name="data_cleaning")`
 
 Typed models:
 
@@ -205,6 +215,7 @@ The environment includes evaluation-friendly instrumentation:
 - Registry-based grader dispatch for deterministic task evaluation
 - Automatic task completion when the clamped raw score reaches `0.99`
 - Leaderboard-style baseline output for quick judging
+- Independent task selection for all three canonical task names
 
 `info` includes:
 
@@ -232,6 +243,22 @@ Optional environment variables:
 
 - `OPENAI_API_KEY`
 - `OPENAI_MODEL` default: `gpt-4.1-mini`
+
+## Evaluation Utilities
+
+Phase-2 compliance checks are included in-repo:
+
+- `tests/test_graders.py` verifies that every registered task has a grader and that each grader returns a score strictly inside `(0, 1)`.
+- `debug_tasks.py` runs all canonical tasks and prints the task name, raw score, clamped score, and steps taken.
+- `inference.py` evaluates all three tasks in sequence: `email_triage`, `meeting_scheduling`, and `data_cleaning`.
+
+Run them locally with:
+
+```bash
+python debug_tasks.py
+python -m unittest tests/test_graders.py
+python inference.py
+```
 
 ## Docker Usage
 
@@ -264,6 +291,8 @@ The included fallback policy is deterministic and should produce reproducible me
 | Average | 0.9900 |
 
 When using an OpenAI model, results remain reproducible so long as the model output is stable and temperature is set to `0`.
+
+The standalone evaluator path in `inference.py` also emits per-task `[START]`, `[STEP]`, and `[END]` lines for all three registered tasks, making it easy to confirm that the submission exposes enough graded tasks during automated review.
 
 ## Future Improvements
 
